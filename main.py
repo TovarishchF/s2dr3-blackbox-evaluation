@@ -91,7 +91,7 @@ def main():
         pbias[orig_cropped[band_index] < 1e-6] = np.nan
 
         max_abs = max(abs(np.nanmin(pbias)), abs(np.nanmax(pbias)))
-        symmetric_vmax = 20
+        symmetric_vmax = 60
 
         save_colormap_image(
             pbias,
