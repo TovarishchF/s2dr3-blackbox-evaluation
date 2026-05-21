@@ -18,7 +18,7 @@ from src.utils import (load_config, setup_logging, save_colormap_image,
 from src.preprocess import load_data, downsample_sr_to_original, crop_to_common_extent
 from src.spectral_metrics import rmse, bias, sam, channel_rmse, ergas, channel_correlation, overall_correlation
 from src.spatial_metrics import glcm_contrast_multiband, edge_density_multiband
-from src.freq_metrics import radial_spectrum, plot_radial_spectrum, plot_radial_spectrum_ratio, plot_spectrum_diff
+from src.freq_metrics import radial_spectrum, plot_radial_spectrum, plot_spectrum_diff
 
 def main():
     start_time = datetime.now()
@@ -172,7 +172,6 @@ def main():
     pow_max = np.max(all_pow_vals) * 2.0
     pow_lims = [pow_min, pow_max]
 
-    ratio_lims = [0.2, 10e1]
     diff_lims = [-0.2, 1.3]
 
     for i, band in enumerate(config['bands']):
@@ -182,14 +181,11 @@ def main():
 
         plot_radial_spectrum(freqs, power_orig, power_sr,
                              save_path=f"results/fft/radial_spectrum_{band}.png",
-                             title=f"{band}",
+                             title=f"Радиальный спектр для канала {band}",
                              xlim=freq_lims, ylim=pow_lims)
-        plot_radial_spectrum_ratio(freqs, power_orig, power_sr,
-                                   save_path=f"results/fft/ratio_{band}.png",
-                                   title=band,
-                                   xlim=freq_lims, ylim=ratio_lims)
         plot_spectrum_diff(freqs, power_orig, power_sr,
                            save_path=f"results/fft/difference_{band}.png",
+                           title=f"Разность радиальных спектров (SR-Оригинал) для {band}",
                            xlim=freq_lims, ylim=diff_lims)
 
         valid = (power_orig > 0) & (power_sr > 0)

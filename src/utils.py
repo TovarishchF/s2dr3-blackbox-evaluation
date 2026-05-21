@@ -229,7 +229,7 @@ def plot_spectral_profiles(orig, sr, classes, band_names, out_dir, window=3):
         ax.grid(True, axis='y', which='minor', linestyle='-', linewidth=0.2, color='grey', alpha=0.2)
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        ax.legend(loc='upper left')
+        ax.legend(loc='upper right', edgecolor='grey')
         fig.tight_layout()
         fig.savefig(out_dir / f'spectral_profile_{class_name}.png', dpi=150, bbox_inches='tight')
         plt.close(fig)

@@ -46,48 +46,24 @@ def plot_radial_spectrum(freqs, power_orig, power_sr, save_path=None, title=None
         ax.set_ylim(ylim)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
+    ax.legend(loc='upper right', edgecolor='grey')
     if save_path:
         fig.savefig(save_path, dpi=150, bbox_inches='tight')
         plt.close(fig)
     else:
         plt.show()
 
-def plot_radial_spectrum_ratio(freqs, power_orig, power_sr, save_path=None, title=None, xlim=None, ylim=None):
-    fig, ax = plt.subplots(figsize=(8, 6))
-    ratio = power_sr / (power_orig + 1e-12)
-    ax.semilogx(freqs, ratio, linewidth=1.6, color='#4daf4a')
-    ax.axhline(y=1, linestyle='--', color='grey', alpha=0.7, linewidth=1.0)
-    ax.set_xlabel('Пространственная частота (циклов/м)', fontsize=12)
-    ax.set_ylabel('Отношение мощности (SR / Оригинал)', fontsize=12)
-    if title:
-        ax.set_title(f'{title} — Отношение спектров', fontsize=14)
-    else:
-        ax.set_title('Отношение радиальных спектров', fontsize=14)
-    ax.set_yscale('log')
-    ax.grid(True, which='major', linestyle='-', linewidth=0.4, color='grey', alpha=0.4)
-    ax.set_facecolor('#f7f7f7')
-    if xlim is not None:
-        ax.set_xlim(xlim)
-    if ylim is not None:
-        ax.set_ylim(ylim)
-    else:
-        ax.set_ylim(0.2, 5.0)
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    if save_path:
-        fig.savefig(save_path, dpi=150, bbox_inches='tight')
-        plt.close(fig)
-    else:
-        plt.show()
-
-def plot_spectrum_diff(freqs, power_orig, power_sr, save_path=None, xlim=None, ylim=None):
+def plot_spectrum_diff(freqs, power_orig, power_sr, save_path=None, title=None, xlim=None, ylim=None):
     fig, ax = plt.subplots(figsize=(8, 6))
     diff = np.log10(power_sr + 1e-12) - np.log10(power_orig + 1e-12)
     ax.semilogx(freqs, diff, linewidth=1.6, color='#9970ab')
     ax.axhline(y=0, linestyle='--', color='grey', alpha=0.7, linewidth=1.0)
     ax.set_xlabel('Пространственная частота (циклов/м)', fontsize=12)
     ax.set_ylabel('Разность: log10(Super Resolution) - log10(Оригинал)', fontsize=12)
-    ax.set_title('Разность спектров (положительное = SR сильнее)', fontsize=14)
+    if title:
+        ax.set_title(title, fontsize=14)
+    else:
+        ax.set_title('Разность спектров (положительное = SR сильнее)', fontsize=14)
     ax.grid(True, which='major', linestyle='-', linewidth=0.4, color='grey', alpha=0.4)
     ax.set_facecolor('#f7f7f7')
     if xlim is not None:
