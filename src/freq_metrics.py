@@ -27,53 +27,77 @@ def radial_spectrum(image, pixel_size=10.0, return_freqs=True):
     else:
         return freqs_pix, radial_means
 
-def plot_radial_spectrum(freqs, power_orig, power_sr, save_path=None, title=None):
-    plt.figure(figsize=(8, 6))
-    plt.loglog(freqs, power_orig, label='Оригинал S2 (10 м)', linewidth=1.6)
-    plt.loglog(freqs, power_sr, label='S2DR4 (10 м)', linewidth=1.6)
-    plt.xlabel('Пространственная частота (циклов/м)', fontsize=12)
-    plt.ylabel('Спектральная плотность мощности', fontsize=12)
+def plot_radial_spectrum(freqs, power_orig, power_sr, save_path=None, title=None, xlim=None, ylim=None):
+    fig, ax = plt.subplots(figsize=(8, 6))
+    ax.loglog(freqs, power_orig, label='Оригинал S2 (10 м)', linewidth=1.6, color='#2166ac')
+    ax.loglog(freqs, power_sr, label='S2DR3 (10 м)', linewidth=1.6, color='#b2182b')
+    ax.set_xlabel('Пространственная частота (циклов/м)', fontsize=12)
+    ax.set_ylabel('Спектральная плотность мощности', fontsize=12)
     if title:
-        plt.title(title, fontsize=14)
+        ax.set_title(title, fontsize=14)
     else:
-        plt.title('Радиальный спектр мощности', fontsize=14)
-    plt.legend(fontsize=10)
-    plt.grid(True, which='both', linestyle='--', alpha=0.5)
+        ax.set_title('Радиальный спектр мощности', fontsize=14)
+    ax.legend(fontsize=10, frameon=True, edgecolor='none', facecolor='white', loc='best')
+    ax.grid(True, which='major', linestyle='-', linewidth=0.4, color='grey', alpha=0.4)
+    ax.set_facecolor('#f7f7f7')
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
     if save_path:
-        plt.savefig(save_path, dpi=150, bbox_inches='tight')
-        plt.close()
+        fig.savefig(save_path, dpi=150, bbox_inches='tight')
+        plt.close(fig)
     else:
         plt.show()
 
-def plot_radial_spectrum_ratio(freqs, power_orig, power_sr, save_path=None, title=None):
-    plt.figure(figsize=(8, 6))
+def plot_radial_spectrum_ratio(freqs, power_orig, power_sr, save_path=None, title=None, xlim=None, ylim=None):
+    fig, ax = plt.subplots(figsize=(8, 6))
     ratio = power_sr / (power_orig + 1e-12)
-    plt.semilogx(freqs, ratio, linewidth=1.6, color='green')
-    plt.axhline(y=1, linestyle='--', color='gray', alpha=0.7)
-    plt.xlabel('Пространственная частота (циклов/м)', fontsize=12)
-    plt.ylabel('Отношение мощности (SR / Оригинал)', fontsize=12)
+    ax.semilogx(freqs, ratio, linewidth=1.6, color='#4daf4a')
+    ax.axhline(y=1, linestyle='--', color='grey', alpha=0.7, linewidth=1.0)
+    ax.set_xlabel('Пространственная частота (циклов/м)', fontsize=12)
+    ax.set_ylabel('Отношение мощности (SR / Оригинал)', fontsize=12)
     if title:
-        plt.title(f'{title} — Отношение спектров', fontsize=14)
+        ax.set_title(f'{title} — Отношение спектров', fontsize=14)
     else:
-        plt.title('Отношение радиальных спектров', fontsize=14)
-    plt.grid(True, which='both', linestyle='--', alpha=0.5)
+        ax.set_title('Отношение радиальных спектров', fontsize=14)
+    ax.set_yscale('log')
+    ax.grid(True, which='major', linestyle='-', linewidth=0.4, color='grey', alpha=0.4)
+    ax.set_facecolor('#f7f7f7')
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    else:
+        ax.set_ylim(0.2, 5.0)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
     if save_path:
-        plt.savefig(save_path, dpi=150, bbox_inches='tight')
-        plt.close()
+        fig.savefig(save_path, dpi=150, bbox_inches='tight')
+        plt.close(fig)
     else:
         plt.show()
 
-def plot_spectrum_diff(freqs, power_orig, power_sr, save_path=None):
+def plot_spectrum_diff(freqs, power_orig, power_sr, save_path=None, xlim=None, ylim=None):
+    fig, ax = plt.subplots(figsize=(8, 6))
     diff = np.log10(power_sr + 1e-12) - np.log10(power_orig + 1e-12)
-    plt.figure(figsize=(8, 6))
-    plt.semilogx(freqs, diff, linewidth=1.6, color='blue')
-    plt.axhline(y=0, linestyle='--', color='gray', alpha=0.7)
-    plt.xlabel('Пространственная частота (циклов/м)', fontsize=12)
-    plt.ylabel('Разность: log10(P_SR) - log10(P_orig)', fontsize=12)
-    plt.title('Разность спектров (положительное = SR сильнее)', fontsize=14)
-    plt.grid(True, which='both', linestyle='--', alpha=0.5)
+    ax.semilogx(freqs, diff, linewidth=1.6, color='#9970ab')
+    ax.axhline(y=0, linestyle='--', color='grey', alpha=0.7, linewidth=1.0)
+    ax.set_xlabel('Пространственная частота (циклов/м)', fontsize=12)
+    ax.set_ylabel('Разность: log10(Super Resolution) - log10(Оригинал)', fontsize=12)
+    ax.set_title('Разность спектров (положительное = SR сильнее)', fontsize=14)
+    ax.grid(True, which='major', linestyle='-', linewidth=0.4, color='grey', alpha=0.4)
+    ax.set_facecolor('#f7f7f7')
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
     if save_path:
-        plt.savefig(save_path, dpi=150, bbox_inches='tight')
-        plt.close()
+        fig.savefig(save_path, dpi=150, bbox_inches='tight')
+        plt.close(fig)
     else:
         plt.show()

@@ -1,17 +1,21 @@
-# S2DR4 Black‑Box Evaluation
+# S2DR3 Black‑Box Evaluation
 
-**No‑reference, black‑box quality assessment** of S2DR4 super‑resolution for Sentinel‑2.  
-We treat the model as a black box – no access to architecture, weights, or training data – and evaluate it solely through its outputs.
+**No‑reference, black‑box quality assessment** of the S2DR3 super‑resolution model for Sentinel‑2.  
+The model is treated as a black box – no access to architecture, weights, or training data – and evaluated solely through its outputs.
 
 ## Key idea
-- Use **Wald protocol** (downscale SR → compare to original Sentinel‑2 at 10 m)
-- Quantitative metrics: RMSE, SAM (spectral angle), bias maps, GLCM contrast, edge density, radial FFT spectrum
-- Practical validation: Random Forest classification with manual ground‑truth (OA, F1, IoU)
+- **Wald protocol**: downscale the super‑resolved image to the original 10 m resolution and compare it with the real Sentinel‑2 L2A reference.
+- **Quantitative metrics**:
+  - Spectral: RMSE, bias, SAM (Spectral Angle Mapper), ERGAS, per‑band and overall correlation (*r*).
+  - Spatial: GLCM contrast, edge density (Canny).
+  - Frequency: radial power spectrum, spectral ratio, difference plots.
+- **Visualisation**: bias maps (absolute and relative), SAM map, per‑band bar charts, spectral profiles for selected land‑cover classes.
+- **Classification** (optional, not detailed in this update): Random Forest with manual ground truth (OA, F1, IoU).
 
 ## Why black‑box?
-- Simulates real‑world scenario where only API/output is available
-- Ensures independent, reproducible evaluation without internal knowledge
-- Methodology can be applied to any super‑resolution service
+- Simulates a real‑world scenario where only the API or output files are available.
+- Guarantees an independent, reproducible evaluation without internal knowledge of the algorithm.
+- The methodology can be applied to any super‑resolution service.
 
 ## Repository structure
 
@@ -31,40 +35,43 @@ s2dr4-blackbox-evaluation/
 ├── LICENSE  
 └── .gitignore  
 
-## All no-reference metrics implemented
+## All implemented no‑reference metrics
 
-| Category | Metric | Module |
-|----------|--------|--------|
-| Consistency | RMSE | `spectral_metrics` |
-| Consistency | SAM (Spectral Angle Mapper) | `spectral_metrics` |
-| Spectral distortion | Bias (mean radiometric shift + maps) | `spectral_metrics` |
-| Texture | GLCM contrast | `spatial_metrics` |
-| Texture | Edge density | `spatial_metrics` |
-| Frequency | Radial power spectrum (FFT) | `freq_metrics` |
-| Classification | Overall Accuracy (OA), F1, IoU | `classification` |
+| Category    | Metric                                | Module            |
+|-------------|---------------------------------------|-------------------|
+| Spectral    | RMSE (total + per band)               | `spectral_metrics` |
+| Spectral    | SAM (mean + map)                      | `spectral_metrics` |
+| Spectral    | Bias (mean radiometric shift + maps)  | `spectral_metrics` |
+| Spectral    | ERGAS                                 | `spectral_metrics` |
+| Spectral    | Per‑band & overall Pearson correlation | `spectral_metrics` |
+| Spatial     | GLCM contrast                         | `spatial_metrics`  |
+| Spatial     | Edge density (Canny)                  | `spatial_metrics`  |
+| Frequency   | Radial power spectrum, slopes         | `freq_metrics`     |
+| Visual      | Spectral profiles per land‑cover class | `utils`            |
+| Classification | Overall Accuracy, F1, IoU           | `classification`   |  
 
-All metrics are computed after **downscaling S2DR4 output back to 10 m** (Wald protocol).  
+All spectral and spatial metrics are computed **after downscaling the S2DR3 output to 10 m** (Wald protocol).
 
 ## Usage
 1. **Clone repository**  
    ```bash
-   git clone https://github.com/yourusername/s2dr4-blackbox-evaluation.git
-   cd s2dr4-blackbox-evaluation
+   git clone https://github.com/yourusername/s2dr3-blackbox-evaluation.git
+   cd s2dr3-blackbox-evaluation
    ```
 2. Install dependencies
     ```bash
    pip install -r requirements.txt
    ```
 3. **Prepare data** (see `data/` folder structure)  
-   - Place original Sentinel‑2 L2A crops (GeoTIFF, 10 m) into `data/original_s2/`  
-   - Place S2DR4 outputs (1 m) into `data/s2dr4_output/`  
+   - Place original Sentinel‑2 L2A crops (GeoTIFF, 10 m) into `data/s2_10m/`  
+   - Place S2DR3 outputs (1 m) into `data/s2sr_1m/`  
    - (Optional) Place ground‑truth shapefiles for classification into `data/ground_truth/`
 
 4. **Run the evaluation**  
    Open `main.ipynb` in Jupyter / VS Code / Colab and execute cells.  
    The notebook will:
    - Load each polygon
-   - Downscale S2DR4 to 10 m
+   - Downscale S2DR3 to 10 m
    - Compute all metrics
    - Run Random Forest classification (if ground truth available)
    - Save results to `results/`
@@ -72,16 +79,16 @@ All metrics are computed after **downscaling S2DR4 output back to 10 m** (Wald
 ## Data sources
 
 - **Sentinel‑2 L2A** – [Copernicus Open Access Hub](https://scihub.copernicus.eu/)  
-- **S2DR4** – public Colab notebook by Gamma Earth  
+- **S2DR3** – public Colab notebook by Gamma Earth  
   ([Medium article](https://medium.com/@ya_71389/c71a601a2253))
 
-## Citation (S2DR4)
+## Citation 
 
-If you use S2DR4 in your work, please cite:
+If you use this module in your work, please cite the original author:  
+> Yosef Akhtman, S2DR3: Effective 12-Band 10x Single Image Super-Resolution for Sentinel-2, October 2, 2023. https://medium.com/@yakhtman/s2dr3
 
-> Yosef Akhtman, S2DR4: Effective 10‑Band 10x Single Image Super‑Resolution for Sentinel‑2. Medium, 2026.
 
 ## License
 
-Code in this repository is released under the **MIT License**.  
-Data (Sentinel‑2, S2DR4 outputs, ground truth) are subject to their own licenses.
+Code in this repository is released under the **Apache 2.0**.  
+Data (Sentinel‑2, S2DR3 outputs, ground truth) are subject to their own licenses.

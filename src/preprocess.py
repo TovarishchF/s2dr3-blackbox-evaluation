@@ -3,18 +3,18 @@ import rasterio
 from skimage.transform import resize
 from rasterio.windows import from_bounds
 from rasterio.warp import reproject, Resampling
-from src.utils import (
-    load_s2_bands_as_stack, load_s2dr4_ms, find_s2_band_files, find_s2dr4_ms_file
-)
+
+from src.utils import load_stack_ms, find_stack_ms_file
+
 
 def load_data(config):
     s2_dir = config['data']['s2_dir']
-    s2dr4_dir = config['data']['s2dr4_dir']
+    s2sr_dir = config['data']['s2sr_dir']
     bands_order = config['bands']
-    band_files = find_s2_band_files(s2_dir, bands_order)
-    orig_stack, orig_geoinfo = load_s2_bands_as_stack(band_files, bands_order)
-    s2dr4_path = find_s2dr4_ms_file(s2dr4_dir)
-    sr_stack, sr_geoinfo = load_s2dr4_ms(s2dr4_path)
+    band_files = find_stack_ms_file(s2_dir)
+    orig_stack, orig_geoinfo = load_stack_ms(band_files)
+    s2sr_path = find_stack_ms_file(s2sr_dir)
+    sr_stack, sr_geoinfo = load_stack_ms(s2sr_path)
     return orig_stack, sr_stack, orig_geoinfo, sr_geoinfo
 
 def downsample_sr_to_original(sr_stack, target_shape, method='bilinear'):

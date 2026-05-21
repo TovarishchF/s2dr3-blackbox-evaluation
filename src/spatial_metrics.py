@@ -5,7 +5,7 @@ from skimage.util import img_as_float
 from skimage.filters import threshold_otsu
 
 
-def glcm_contrast(image, distances=[1], angles=[0, np.pi / 4, np.pi / 2, 3 * np.pi / 4], levels=16):
+def glcm_contrast(image, distances=[1], angles=[0, np.pi / 4, np.pi / 2, 3 * np.pi / 4], levels=128):
     if image.dtype.kind == 'f':
         img = (image * (levels - 1)).astype(np.int32)
         img = np.clip(img, 0, levels - 1)
@@ -27,7 +27,7 @@ def glcm_contrast(image, distances=[1], angles=[0, np.pi / 4, np.pi / 2, 3 * np.
     return np.mean(contrast_all)
 
 
-def glcm_contrast_multiband(stack, distances=[1], angles=None, levels=16):
+def glcm_contrast_multiband(stack, distances=[1], angles=None, levels=128):
     if angles is None:
         angles = [0, np.pi / 4, np.pi / 2, 3 * np.pi / 4]
     contrasts = []

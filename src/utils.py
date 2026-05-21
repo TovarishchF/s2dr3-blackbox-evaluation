@@ -2,6 +2,7 @@ import logging
 import yaml
 import numpy as np
 import rasterio
+import matplotlib.pyplot as plt
 from rasterio.enums import Resampling
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -20,14 +21,6 @@ def load_config(config_path="config.yaml"):
         config = yaml.safe_load(f)
     return config
 
-def read_raster(filepath):
-    with rasterio.open(filepath) as src:
-        array = src.read(1).astype(np.float32)
-        transform = src.transform
-        crs = src.crs
-        bounds = src.bounds
-    return array, transform, crs, bounds
-
 def write_raster(filepath, array, transform, crs):
     Path(filepath).parent.mkdir(parents=True, exist_ok=True)
     with rasterio.open(
@@ -42,19 +35,7 @@ def write_raster(filepath, array, transform, crs):
     ) as dst:
         dst.write(array, 1)
 
-def find_s2_band_files(directory: str, bands: List[str]) -> Dict[str, Path]:
-    directory = Path(directory)
-    if not directory.exists():
-        raise FileNotFoundError(f"Директория {directory} не существует")
-    band_files = {}
-    for band in bands:
-        found = list(directory.glob(f"*{band}*.jp2"))
-        if not found:
-            raise FileNotFoundError(f"Не найден файл для канала {band} в {directory}")
-        band_files[band] = found[0]
-    return band_files
-
-def find_s2dr4_ms_file(directory: str) -> Path:
+def find_stack_ms_file(directory: str) -> Path:
     directory = Path(directory)
     if not directory.exists():
         raise FileNotFoundError(f"Директория {directory} не существует")
@@ -63,38 +44,19 @@ def find_s2dr4_ms_file(directory: str) -> Path:
         raise FileNotFoundError(f"Не найден файл *_MS.tif в {directory}")
     return ms_files[0]
 
-def load_s2_bands_as_stack(band_files: Dict[str, Path], bands_order: List[str]) -> Tuple[np.ndarray, dict]:
-    arrays = []
-    transform = None
-    crs = None
-    bounds = None
-    target_shape = None
-    for band in bands_order:
-        with rasterio.open(band_files[band]) as src:
-            if target_shape is None:
-                target_shape = src.shape
-                transform = src.transform
-                crs = src.crs
-                bounds = src.bounds
-            if src.shape != target_shape:
-                arr = src.read(1, out_shape=target_shape, resampling=Resampling.bilinear).astype(np.uint16)
-            else:
-                arr = src.read(1).astype(np.uint16)
-            arrays.append(arr)
-    stack = np.stack(arrays, axis=0)
-    geoinfo = {'transform': transform, 'crs': crs, 'bounds': bounds}
-    return stack, geoinfo
-
-def load_s2dr4_ms(filepath: Path) -> Tuple[np.ndarray, dict]:
+def load_stack_ms(filepath: Path) -> Tuple[np.ndarray, dict]:
     with rasterio.open(filepath) as src:
-        stack = src.read()
+        stack = src.read().astype(np.float32)
         transform = src.transform
         crs = src.crs
         bounds = src.bounds
     geoinfo = {'transform': transform, 'crs': crs, 'bounds': bounds}
     return stack, geoinfo
 
-def save_colormap_image(array, output_path, transform, crs, cmap='coolwarm', title=None, draw_grid=False, bounds=None, vmin=None, vmax=None):
+def save_colormap_image(array, output_path,
+                        transform, crs, cmap='coolwarm',
+                        title=None, draw_grid=False,
+                        bounds=None, vmin=None, vmax=None):
     tif_path = output_path.replace('.png', '.tif')
     write_raster(tif_path, array, transform, crs)
     if draw_grid:
@@ -152,3 +114,122 @@ def save_colormap_image(array, output_path, transform, crs, cmap='coolwarm', tit
         ax.axis('off')
         plt.savefig(output_path, dpi=150, bbox_inches='tight')
         plt.close()
+
+def plot_rmse_bars(vals, band_names, ylabel, title, save_path):
+    x = np.arange(len(band_names))
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.bar(x, vals, color='#b2182b', edgecolor='white', linewidth=0.5, label='S2DR3')
+    ax.set_xlabel('Канал', fontsize=12)
+    ax.set_ylabel(ylabel, fontsize=12)
+    ax.set_title(title, fontsize=14)
+    ax.set_xticks(x)
+    ax.set_xticklabels(band_names, fontsize=10)
+    ax.legend(fontsize=10, frameon=True, edgecolor='grey', facecolor='white')
+    ax.grid(True, axis='y', which='major', linestyle='-', linewidth=0.4, color='grey', alpha=0.4)
+    ax.yaxis.set_minor_locator(plt.matplotlib.ticker.AutoMinorLocator(2))
+    ax.grid(True, axis='y', which='minor', linestyle='-', linewidth=0.2, color='grey', alpha=0.2)
+    ax.set_facecolor('#f7f7f7')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    fig.tight_layout()
+    fig.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.close(fig)
+
+def plot_bias_bars(bias_vals, band_names, save_path):
+    x = np.arange(len(band_names))
+    colors = ['#2166ac' if v < 0 else '#b2182b' for v in bias_vals]
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.bar(x, bias_vals, color=colors, edgecolor='white', linewidth=0.5)
+    ax.axhline(0, color='black', linewidth=0.8)
+    ax.set_xlabel('Канал', fontsize=12)
+    ax.set_ylabel('Смещение (отражение)', fontsize=12)
+    ax.set_title('Среднее поканальное смещение', fontsize=14)
+    ax.set_xticks(x)
+    ax.set_xticklabels(band_names, fontsize=10)
+    ax.grid(True, axis='y', which='major', linestyle='-', linewidth=0.4, color='grey', alpha=0.4)
+    ax.yaxis.set_minor_locator(plt.matplotlib.ticker.AutoMinorLocator(2))
+    ax.grid(True, axis='y', which='minor', linestyle='-', linewidth=0.2, color='grey', alpha=0.2)
+    ax.set_facecolor('#f7f7f7')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    from matplotlib.patches import Patch
+    legend_elements = [
+                    Patch(facecolor='#2166ac', label='Отрицательное'),
+                    Patch(facecolor='#b2182b', label='Положительное')]
+    ax.legend(handles=legend_elements, edgecolor='grey', fontsize=9, loc='upper right')
+    fig.tight_layout()
+    fig.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.close(fig)
+
+def plot_per_band_bars(orig_vals, sr_vals, band_names, ylabel, title, save_path, colors=('#2166ac', '#b2182b')):
+    x = np.arange(len(band_names))
+    width = 0.35
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.bar(x - width/2, orig_vals, width, label='Оригинал S2', color=colors[0], edgecolor='white', linewidth=0.5)
+    ax.bar(x + width/2, sr_vals, width, label='S2DR3', color=colors[1], edgecolor='white', linewidth=0.5)
+    ax.set_xlabel('Канал', fontsize=12)
+    ax.set_ylabel(ylabel, fontsize=12)
+    ax.set_title(title, fontsize=14)
+    ax.set_xticks(x)
+    ax.set_xticklabels(band_names, fontsize=10)
+    ax.legend(fontsize=10, frameon=True, edgecolor='grey', facecolor='white')
+    ax.grid(True, axis='y', which='major', linestyle='-', linewidth=0.4, color='grey', alpha=0.4)
+    ax.yaxis.set_minor_locator(plt.matplotlib.ticker.AutoMinorLocator(2))
+    ax.grid(True, axis='y', which='minor', linestyle='-', linewidth=0.2, color='grey', alpha=0.2)
+    ax.set_facecolor('#f7f7f7')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    fig.tight_layout()
+    fig.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.close(fig)
+
+def plot_spectral_profiles(orig, sr, classes, band_names, out_dir, window=3):
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    def extract_spectrum(stack, r, c, w):
+        r0 = max(0, r - w//2)
+        r1 = min(stack.shape[1], r + w//2 + 1)
+        c0 = max(0, c - w//2)
+        c1 = min(stack.shape[2], c + w//2 + 1)
+        return np.nanmean(stack[:, r0:r1, c0:c1], axis=(1,2))
+
+    n_bands = orig.shape[0]
+    band_indices = np.arange(n_bands)
+
+    all_vals = []
+    for points in classes.values():
+        for r, c in points:
+            all_vals.append(extract_spectrum(orig, r, c, window))
+            all_vals.append(extract_spectrum(sr, r, c, window))
+    all_vals = np.concatenate(all_vals)
+    y_min = np.min(all_vals) * 0.9
+    y_max = np.max(all_vals) * 1.1
+
+    for class_name, points in classes.items():
+        fig, ax = plt.subplots(figsize=(10, 5))
+        for i, (r, c) in enumerate(points):
+            spec_orig = extract_spectrum(orig, r, c, window)
+            spec_sr = extract_spectrum(sr, r, c, window)
+            lbl_orig = 'Оригинал' if i == 0 else None
+            lbl_sr = 'SR' if i == 0 else None
+            ax.plot(band_indices, spec_orig, 'o-', color='#2166ac',
+                    label=lbl_orig)
+            ax.plot(band_indices, spec_sr, 's--', color='#b2182b',
+                    label=lbl_sr)
+        ax.set_xticks(band_indices)
+        ax.set_xticklabels(band_names, rotation=45)
+        ax.set_xlabel('Канал')
+        ax.set_ylabel('Отражение')
+        ax.set_title(f'Спектральные профили — {class_name}')
+        ax.set_ylim(y_min, y_max)
+        ax.set_facecolor('#f7f7f7')
+        ax.grid(True, axis='y', which='major', linestyle='-', linewidth=0.4, color='grey', alpha=0.4)
+        ax.yaxis.set_minor_locator(plt.matplotlib.ticker.AutoMinorLocator(2))
+        ax.grid(True, axis='y', which='minor', linestyle='-', linewidth=0.2, color='grey', alpha=0.2)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.legend(loc='upper left')
+        fig.tight_layout()
+        fig.savefig(out_dir / f'spectral_profile_{class_name}.png', dpi=150, bbox_inches='tight')
+        plt.close(fig)
