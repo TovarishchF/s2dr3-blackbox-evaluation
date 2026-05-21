@@ -77,9 +77,9 @@ def load_s2_bands_as_stack(band_files: Dict[str, Path], bands_order: List[str]) 
                 crs = src.crs
                 bounds = src.bounds
             if src.shape != target_shape:
-                arr = src.read(1, out_shape=target_shape, resampling=Resampling.bilinear).astype(np.float32)
+                arr = src.read(1, out_shape=target_shape, resampling=Resampling.bilinear).astype(np.uint16)
             else:
-                arr = src.read(1).astype(np.float32)
+                arr = src.read(1).astype(np.uint16)
             arrays.append(arr)
     stack = np.stack(arrays, axis=0)
     geoinfo = {'transform': transform, 'crs': crs, 'bounds': bounds}
@@ -152,17 +152,3 @@ def save_colormap_image(array, output_path, transform, crs, cmap='coolwarm', tit
         ax.axis('off')
         plt.savefig(output_path, dpi=150, bbox_inches='tight')
         plt.close()
-
-def plot_radial_spectrum(frequencies, power_original, power_sr, save_path=None):
-    import matplotlib.pyplot as plt
-    plt.figure(figsize=(8, 6))
-    plt.loglog(frequencies, power_original, label='Original S2 (10m)', linewidth=2)
-    plt.loglog(frequencies, power_sr, label='Downscaled SR (10m)', linewidth=2)
-    plt.xlabel('Spatial frequency (cycles/pixel)')
-    plt.ylabel('Power spectral density')
-    plt.title('Radial power spectrum')
-    plt.legend()
-    plt.grid(True, which='both', linestyle='--', alpha=0.5)
-    if save_path:
-        plt.savefig(save_path, dpi=150)
-    plt.show()
