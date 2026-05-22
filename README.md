@@ -10,7 +10,6 @@ The model is treated as a black box – no access to architecture, weights, or t
   - Spatial: GLCM contrast, edge density (Canny).
   - Frequency: radial power spectrum, spectral ratio, difference plots.
 - **Visualisation**: bias maps (absolute and relative), SAM map, per‑band bar charts, spectral profiles for selected land‑cover classes.
-- **Classification** (optional, not detailed in this update): Random Forest with manual ground truth (OA, F1, IoU).
 
 ## Why black‑box?
 - Simulates a real‑world scenario where only the API or output files are available.
@@ -26,9 +25,10 @@ s2dr4-blackbox-evaluation/
 │ ├── spectral_metrics.py # RMSE, Bias, SAM (pixel‑wise + maps)  
 │ ├── spatial_metrics.py # GLCM contrast, edge density  
 │ ├── freq_metrics.py # FFT, radial power spectrum  
-│ ├── classification.py # Random Forest, OA, F1, IoU  
 │ └── utils.py # Visualisation helpers, config  
-├── data/ # (ignored) – original S2, S2DR4 outputs, ground truth  
+├── data/ # (ignored)  
+│ ├── s2_10m/ # Original Sentinel-2 tile   
+│ └── s2sr_1m/ # Super-resolution S2DR3 tile    
 ├── results/ # (auto‑created) – tables, plots, maps  
 ├── config.yaml # Configuration file containing paths, etc.  
 ├── requirements.txt  
@@ -48,7 +48,6 @@ s2dr4-blackbox-evaluation/
 | Spatial     | Edge density (Canny)                  | `spatial_metrics`  |
 | Frequency   | Radial power spectrum, slopes         | `freq_metrics`     |
 | Visual      | Spectral profiles per land‑cover class | `utils`            |
-| Classification | Overall Accuracy, F1, IoU           | `classification`   |  
 
 All spectral and spatial metrics are computed **after downscaling the S2DR3 output to 10 m** (Wald protocol).
 
@@ -63,9 +62,8 @@ All spectral and spatial metrics are computed **after downscaling the S2DR3 outp
    pip install -r requirements.txt
    ```
 3. **Prepare data** (see `data/` folder structure)  
-   - Place original Sentinel‑2 L2A crops (GeoTIFF, 10 m) into `data/s2_10m/`  
+   - Place original Sentinel‑2 L2A crops (GeoTIFF) into `data/s2_10m/`  
    - Place S2DR3 outputs (1 m) into `data/s2sr_1m/`  
-   - (Optional) Place ground‑truth shapefiles for classification into `data/ground_truth/`
 
 4. **Run the evaluation**  
    Open `main.ipynb` in Jupyter / VS Code / Colab and execute cells.  
@@ -73,7 +71,6 @@ All spectral and spatial metrics are computed **after downscaling the S2DR3 outp
    - Load each polygon
    - Downscale S2DR3 to 10 m
    - Compute all metrics
-   - Run Random Forest classification (if ground truth available)
    - Save results to `results/`
 
 ## Data sources
